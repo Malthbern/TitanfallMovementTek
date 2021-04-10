@@ -71,6 +71,13 @@ public class Titanfallmovementtek : UdonSharpBehaviour
             JumpCount += 1;
         }
     }
+    
+        public void GeneralReset()
+    {
+        JumpCount = 0;
+        TimeWaited = 0;
+        Debug.Log("Jump reset by outside script");
+    }
     void LateUpdate()
     {
         //this looks dumb because VRC is dumb and dosen't instantly change "isplayergrounded"
