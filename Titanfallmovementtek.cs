@@ -1,10 +1,9 @@
-﻿
 using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-public class Titanfallmovementtek : UdonSharpBehaviour
+public class TitanfallDoubleJump : UdonSharpBehaviour
 {
     private int JumpCount = 0;
     private float TimeWaited = 0;
@@ -17,7 +16,7 @@ public class Titanfallmovementtek : UdonSharpBehaviour
     {
         Debug.Log("TF Movement Tech started");
         Debug.Log("Writen by Malthbern#0233");
-        Debug.Log("");
+        Debug.Log("https://github.com/Malthbern/TitanfallMovementTek");
     }
     void Update()
     {
@@ -71,8 +70,7 @@ public class Titanfallmovementtek : UdonSharpBehaviour
             JumpCount += 1;
         }
     }
-    
-        public void GeneralReset()
+    public void GeneralReset()
     {
         JumpCount = 0;
         TimeWaited = 0;
