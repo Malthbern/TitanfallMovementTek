@@ -1,4 +1,3 @@
-﻿
 using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
@@ -23,6 +22,7 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
 
     void Start()
     {
+        //credits
         Debug.Log("TF Double Jump started");
         Debug.Log("Writen by Malthbern#0233");
         Debug.Log("https://github.com/Malthbern/TitanfallMovementTek");
@@ -63,11 +63,14 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
 
             if (JumpCount == 0)
             {
+                //basically ignore the first jump
+                //vrchat handels it
                 Debug.Log("first jump loged");
                 JumpCount = 1;
             }
             else
             {
+                //check if timer is complete
                 if (JumpTimeWaited >= JumpWaitTime)
                 {
                     Debug.Log("Djump start");
@@ -93,6 +96,7 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
     }
     void GeneralReset()
     {
+        //this is to reset for wallrunning
         JumpCount = 0;
         JumpTimeWaited = 0;
         Debug.Log("Jump reset by outside script");
