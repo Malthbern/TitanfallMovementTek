@@ -10,15 +10,23 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
     private float JumpTimeWaited = 0;
     private bool IDetection = false;
     private bool trueground = true;
+
     public int JumpsAllowed = 2;
     public float JumpPower = 6;
     public float JumpWaitTime = 0.5f;
 
     //Values for SlideHop
     private Vector3 SavedV3;
+    private Vector3 playerhead1;
+    private Vector3 playerhead2;
+    private Vector3 playerroot1;
+    private Vector3 playerroot2;
+    private float playerheightf;
+    private float playercrouchf;
     private float SlideTimeWaited = 0;
-    private int UpHash = Animator.StringToHash("Upright");
-    public float SlideVSaveTime = 0.3f;
+    private float UpdateHeight = 0;
+
+    public float SlideVSaveTime = 1.5f;
 
     void Start()
     {
@@ -37,6 +45,7 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
     void LateUpdate()
     {
         LateUpdateDJump();
+        LateUpdateSlideHop();
     }
     //beginig of all jump logic
     void UpdateDJump()
@@ -46,7 +55,6 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
         {
             if (JumpTimeWaited < JumpWaitTime)
             {
-                Debug.Log("JumpTimeWaited Tic");
                 JumpTimeWaited += Time.deltaTime;
             }
             else
@@ -123,28 +131,65 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
     //begining of all slidehop logic
     void UpdateSlideHop()
     {
+        //hop boost logic starts
+
+        //get player height this frame
+        playerhead1 = Networking.LocalPlayer.GetBonePosition(HumanBodyBones.Head);
+        playerroot1 = Networking.LocalPlayer.GetPosition();
+
+        playerheightf = playerhead1.y - playerroot1.y;
+
         if (trueground == false)
         {
             //save previous v3 and set y to 0
             SavedV3 = Networking.LocalPlayer.GetVelocity();
             SavedV3.y = 0;
+            Debug.Log("velocity saved");
         }
         else
         {
+            if (UpdateHeight < 15.0f)
+            {
+                UpdateHeight += Time.deltaTime;
+            }
+            else
+            {
+                if (trueground == true)
+                {
+                    //calibrateing crouch level
+                     playerhead2 = Networking.LocalPlayer.GetBonePosition(HumanBodyBones.Head);
+                     playerroot2 = Networking.LocalPlayer.GetPosition();
+
+                    float playerheight2 = playerhead2.y - playerroot2.y;
+                    playercrouchf = playerheight2 * 0.68f;
+                    UpdateHeight = 0.0f;
+
+                    Debug.Log("Heigh Calibrated, Player Height: " + playerheight2 + ", Crouch Height: " + playercrouchf);
+                }
+
+            }
             //buffer timer to actually allow slide hoping for limited time
-            if (SlideTimeWaited < SlideVSaveTime)
+            if (SlideTimeWaited < SlideVSaveTime && playerheightf < playercrouchf)
             {
                 SlideTimeWaited += Time.deltaTime;
             }
             else
             {
                 SavedV3 = new Vector3(0, 0, 0);
+                Debug.Log("velocity boost reset");
             }
         }
-        //this code dosen't work yet, but it checks for input and crouched
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0) || Input.GetKeyDown(KeyCode.JoystickButton1) && Animator.GetFloat(UpHash) < .68) //i need to get the local player's crouched position but i have no clue where to go from here (CS0120)
+
+        //slide boost logic starts
+   
+    }
+    void LateUpdateSlideHop()
+    {
+        //logic for appling boost for a slide hop
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0) || Input.GetKeyDown(KeyCode.JoystickButton1) && playerheightf <= playercrouchf && trueground == true)
         {
             Networking.LocalPlayer.SetVelocity(Networking.LocalPlayer.GetVelocity() + SavedV3);
+            Debug.Log("hop boost applied");
         }
     }
 }
