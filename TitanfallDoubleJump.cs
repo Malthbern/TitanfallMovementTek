@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -15,12 +15,13 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
     public float JumpPower = 6;
     public float JumpWaitTime = 0.5f;
 
-    //Values for SlideHop
+    //Values for Hop
     private Vector3 SavedV3;
     private Vector3 playerhead1;
     private Vector3 playerhead2;
     private Vector3 playerroot1;
     private Vector3 playerroot2;
+    private float playerheight2;
     private float playerheightf;
     private float playercrouchf;
     private float SlideTimeWaited = 0;
@@ -28,10 +29,20 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
 
     public float SlideVSaveTime = 1.5f;
 
+    //values for slide
+    private Vector3 CurrentV;
+    private float CVX;
+    private float CVZ;
+    private bool InSlide = false;
+
+    public float SlideTime = 3.5f;
+    public float SlideBeginSpeed = 1.2f;
+    public float SlideMultiplier = 1.5f;
+
     void Start()
     {
         //credits
-        Debug.Log("TF Double Jump started");
+        Debug.Log("TF Movement Tek started");
         Debug.Log("Writen by Malthbern#0233");
         Debug.Log("https://github.com/Malthbern/TitanfallMovementTek");
     }
@@ -131,7 +142,7 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
     //begining of all slidehop logic
     void UpdateSlideHop()
     {
-        //hop boost logic starts
+
 
         //get player height this frame
         playerhead1 = Networking.LocalPlayer.GetBonePosition(HumanBodyBones.Head);
@@ -139,6 +150,7 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
 
         playerheightf = playerhead1.y - playerroot1.y;
 
+        //hop logic starts
         if (trueground == false)
         {
             //save previous v3 and set y to 0
@@ -154,13 +166,13 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
             }
             else
             {
-                if (trueground == true)
+                if (trueground == true && InSlide == false)
                 {
                     //calibrateing crouch level
                      playerhead2 = Networking.LocalPlayer.GetBonePosition(HumanBodyBones.Head);
                      playerroot2 = Networking.LocalPlayer.GetPosition();
 
-                    float playerheight2 = playerhead2.y - playerroot2.y;
+                    playerheight2 = playerhead2.y - playerroot2.y;
                     playercrouchf = playerheight2 * 0.68f;
                     UpdateHeight = 0.0f;
 
@@ -180,8 +192,15 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
             }
         }
 
-        //slide boost logic starts
-   
+        //slide logic starts
+
+        //get velocity
+        CurrentV = Networking.LocalPlayer.GetVelocity();
+
+        CVX = CurrentV.x;
+        CVZ = CurrentV.z;
+
+        Debug.Log("Absoulute value of V is" + Mathf.Abs(CVX) + "X " + Mathf.Abs(CVZ) + "Z");
     }
     void LateUpdateSlideHop()
     {
@@ -190,6 +209,18 @@ public class TitanfallDoubleJump : UdonSharpBehaviour
         {
             Networking.LocalPlayer.SetVelocity(Networking.LocalPlayer.GetVelocity() + SavedV3);
             Debug.Log("hop boost applied");
+        }
+
+        //logic for sliding
+        if (playerheightf <= playercrouchf && trueground == true && Mathf.Abs(CVX) >= SlideBeginSpeed || Mathf.Abs(CVZ) >= SlideBeginSpeed)
+        {
+            //not quite working yet, velocity needs to be clamped
+            InSlide = true;
+            Networking.LocalPlayer.SetVelocity(Networking.LocalPlayer.GetVelocity() + new Vector3(CVX * SlideMultiplier,0,CVZ * SlideMultiplier));
+        }
+        else
+        {
+            InSlide = false;
         }
     }
 }
