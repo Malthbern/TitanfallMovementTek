@@ -5,6 +5,10 @@ using VRC.Udon;
 
 public class TitanfallMovement : UdonSharpBehaviour
 {
+    //common values
+    private Vector3 CurrentV;
+
+
     //Values For DJump
     private int JumpCount = 0;
     private float JumpTimeWaited = 0;
@@ -13,15 +17,19 @@ public class TitanfallMovement : UdonSharpBehaviour
 
     public int JumpsAllowed = 2;
     public float JumpPower = 6;
-    public float JumpWaitTime = 0.5f;
+    public float JumpWaitTime = 0.35f;
 
 
     //vars for wallrun
 
     private bool isWallruning = false;
+    private float HungTime;
+    private bool HangTimerUp = false;
 
     public string WallDirection;
     public float HangPower = 0.3f;
+    public float Hangtime = 4.5f;
+
 
 
     //currently unused
@@ -40,10 +48,6 @@ public class TitanfallMovement : UdonSharpBehaviour
     public float SlideVSaveTime = 1.5f;
 
     //values for slide
-    private Vector3 CurrentV;
-    private float CVX;
-    private float CVZ;
-    private float CVY;
     private bool InSlide = false;
     private float slidespeedx;
     private float slidespeedz;
@@ -66,11 +70,7 @@ public class TitanfallMovement : UdonSharpBehaviour
         //get velocity
         CurrentV = Networking.LocalPlayer.GetVelocity();
 
-        CVX = CurrentV.x;
-        CVZ = CurrentV.z;
-        CVY = CurrentV.y;
-
-        //a dumb way to allow for scripting custom events in the way i needed
+        //a dum way to allow for scripting custom events in the way i needed
         //in U# in a way U# allows for... i hate this
         UpdateDJump();
         WallrunUpdate();
@@ -166,53 +166,61 @@ public class TitanfallMovement : UdonSharpBehaviour
 
     private void WallrunUpdate()
     {
-        //initate wallrun by detecting wall direction and appling a "wall stick and y = 0 force"
-        if (Networking.LocalPlayer.IsPlayerGrounded() == false && isWallruning == false)
+        //limiting how long a player can wallrun
+        if (isWallruning == true && HungTime <= Hangtime)
         {
+            Debug.Log("han time tick");
+            HungTime += Time.deltaTime;
+        }
+        else if (HungTime >= Hangtime && Networking.LocalPlayer.IsPlayerGrounded() == false)
+        {
+            isWallruning = false;
+            HangTimerUp = true;
+        }
+
+        //initate wallrun by detecting wall direction and appling a "slowed Y force"
+        if (Networking.LocalPlayer.IsPlayerGrounded() == false && isWallruning == false && HangTimerUp == false)
+        {
+            Debug.Log("can wallrun");
             if (WallDirection == "Back")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CVX, 2.2f, CVZ));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, 2.2f,CurrentV.z));
                 isWallruning = true;
             }
             else if (WallDirection == "Right")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CVX, 2.2f, CVZ));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x * 2, 2.2f, CurrentV.z));
                 isWallruning = true;
             }
             else if (WallDirection == "Left")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CVX, CVY * 2.2f, CVZ));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, CurrentV.y * 2.2f, CurrentV.z));
                 isWallruning = true;
             }
             else if (WallDirection == "Front")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CVX, CVY * 2.2f, CVZ));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, CurrentV.y * 2.2f, CurrentV.z));
                 isWallruning = true;
             }
-            else if (WallDirection == "NW")
-            {
-                Networking.LocalPlayer.SetGravityStrength(1f);
-                isWallruning = false;
-            }
         }
-        else
+        //reseting wallrun when you get away from the wall or touch the floor
+        else if (Networking.LocalPlayer.IsPlayerGrounded() == true || WallDirection == "NW")
         {
-            if (Networking.LocalPlayer.IsPlayerGrounded() == true)
-            {
-                WallDirection = null;
-                isWallruning = false;
-                Networking.LocalPlayer.SetGravityStrength(1f);
-            }
+            Debug.Log("finished Wallrun");
+            HangTimerUp = false;
+            HungTime = 0;
+            WallDirection = null;
+            isWallruning = false;
+            Networking.LocalPlayer.SetGravityStrength(1f);
         }
-           
     }
 
 
@@ -277,8 +285,8 @@ public class TitanfallMovement : UdonSharpBehaviour
         //slide speed math
         if (InSlide == false)
         {
-            slidespeedx = (CVX * SlideMultiplier);
-            slidespeedz = (CVZ * SlideMultiplier);
+            slidespeedx = (CurrentV.x * SlideMultiplier);
+            slidespeedz = (CurrentV.z * SlideMultiplier);
         }
     }
     private void LateUpdateSlideHop()
@@ -292,9 +300,9 @@ public class TitanfallMovement : UdonSharpBehaviour
         }
 
         //logic for sliding
-        if (playerheightf < playercrouchf && trueground == true && Mathf.Abs(CVX) >= SlideBeginSpeed || Mathf.Abs(CVZ) >= SlideBeginSpeed)
+        if (playerheightf < playercrouchf && trueground == true && Mathf.Abs(CurrentV.x) >= SlideBeginSpeed || Mathf.Abs(CurrentV.z) >= SlideBeginSpeed)
         {
-            Networking.LocalPlayer.SetVelocity(new Vector3(slidespeedx, CVY, slidespeedz));
+            Networking.LocalPlayer.SetVelocity(new Vector3(slidespeedx, CurrentV.y, slidespeedz));
             InSlide = true;
         }
         else
