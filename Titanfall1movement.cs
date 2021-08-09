@@ -1,4 +1,4 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -33,6 +33,15 @@ public class Titanfall1Movement : UdonSharpBehaviour
     public float Hangtime = 4.5f;
 
 
+    //these are for an admin pannel to allow for testing and addressing mov
+    [HideInInspector]
+    public bool ADVMVMT = true;
+    [HideInInspector]
+    public bool JMP = true;
+    [HideInInspector]
+    public bool WALL = true;
+
+
     void Start()
     {
         //credits
@@ -49,12 +58,28 @@ public class Titanfall1Movement : UdonSharpBehaviour
 
         //a dum way to allow for scripting custom events in the way i needed
         //in U# in a way U# allows for... i hate this
-        UpdateDJump();
-        WallrunUpdate();
+
+        if (ADVMVMT)
+        {
+            if (JMP)
+            {
+                UpdateDJump();
+            }
+            if (WALL)
+            {
+                WallrunUpdate(); 
+            }
+        }
     }
     void LateUpdate()
     {
-        LateUpdateDJump();
+        if (ADVMVMT)
+        {
+            if (JMP)
+            {
+                LateUpdateDJump(); 
+            }
+        }
     }
 
 
@@ -104,13 +129,17 @@ public class Titanfall1Movement : UdonSharpBehaviour
     {
         Debug.Log("start of DJMP");
 
-        if (JumpCount < JumpsAllowed)
+        if (JumpCount < JumpsAllowed || isWallruning)
         {
             Debug.Log("appling DJMP");
             //sets player's V3 to their V3 + what's set in Jumppower's float value
             //also incriments the jump count to avoid infinate jumps
             Networking.LocalPlayer.SetVelocity(Networking.LocalPlayer.GetVelocity() + new Vector3(0, JumpPower, 0));
-            JumpCount += 1;
+
+            if (!isWallruning)
+            {
+                JumpCount += 1;
+            }
         }
     }
     private void GeneralReset()
@@ -192,7 +221,6 @@ public class Titanfall1Movement : UdonSharpBehaviour
         //reseting wallrun when you get away from the wall or touch the floor
         else if (Networking.LocalPlayer.IsPlayerGrounded() == true || WallDirection == "NW")
         {
-            Debug.Log("finished Wallrun");
             HangTimerUp = false;
             HungTime = 0;
             WallDirection = null;
