@@ -1,4 +1,4 @@
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -129,17 +129,16 @@ public class Titanfall1Movement : UdonSharpBehaviour
     {
         Debug.Log("start of DJMP");
 
-        if (JumpCount < JumpsAllowed || isWallruning)
+        if (JumpCount < JumpsAllowed && isWallruning == false)
         {
             Debug.Log("appling DJMP");
             //sets player's V3 to their V3 + what's set in Jumppower's float value
             //also incriments the jump count to avoid infinate jumps
             Networking.LocalPlayer.SetVelocity(Networking.LocalPlayer.GetVelocity() + new Vector3(0, JumpPower, 0));
-
-            if (!isWallruning)
-            {
-                JumpCount += 1;
-            }
+        }
+        else if (isWallruning == true)
+        {
+            JumpCount = 1;
         }
     }
     private void GeneralReset()
@@ -173,6 +172,7 @@ public class Titanfall1Movement : UdonSharpBehaviour
     // Wallrun logic
     private void WallrunUpdate()
     {
+        Debug.Log("hangtimer is " + HungTime);
         //limiting how long a player can wallrun
         if (isWallruning == true && HungTime <= Hangtime)
         {
@@ -181,8 +181,10 @@ public class Titanfall1Movement : UdonSharpBehaviour
         }
         else if (HungTime >= Hangtime && Networking.LocalPlayer.IsPlayerGrounded() == false)
         {
-            isWallruning = false;
             HangTimerUp = true;
+            WallDirection = null;
+            isWallruning = false;
+            Networking.LocalPlayer.SetGravityStrength(1f);
         }
 
         //initate wallrun by detecting wall direction and appling a "slowed Y force"
@@ -193,28 +195,28 @@ public class Titanfall1Movement : UdonSharpBehaviour
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, 2.2f, CurrentV.z));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, 3f, CurrentV.z));
                 isWallruning = true;
             }
             else if (WallDirection == "Right")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x * 2, 2.2f, CurrentV.z));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, 3f, CurrentV.z));
                 isWallruning = true;
             }
             else if (WallDirection == "Left")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, CurrentV.y * 2.2f, CurrentV.z));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, 3f, CurrentV.z));
                 isWallruning = true;
             }
             else if (WallDirection == "Front")
             {
                 Debug.Log("wall Direction is " + WallDirection);
                 Networking.LocalPlayer.SetGravityStrength(HangPower);
-                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, CurrentV.y * 2.2f, CurrentV.z));
+                Networking.LocalPlayer.SetVelocity(new Vector3(CurrentV.x, 3f, CurrentV.z));
                 isWallruning = true;
             }
         }
